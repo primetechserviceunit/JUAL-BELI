@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>PT PRIME TECH - Jual Beli Alat Berat</title>
+<style>
+body { font-family: Arial, sans-serif; 
+    margin:0; 
+    padding:0; 
+    background:#0b0b0b; 
+    color: #e0e0e0; 
+}
+header { 
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)),
+    url("https://www.upload.ee/image/19041834/WhatsApp_Image_2026-02-03_at_08.20.23.jpeg");
+    color:#d4af37; 
+    padding:20px; 
+    display:flex; 
+    justify-content:space-between; 
+    align-items:center; 
+}
+header h1 { 
+    margin:0; 
+    font-size:24px; 
+}
+header button { 
+    display: block;
+    background-color: #d4af37; 
+    color: #000;
+    border:none; 
+    padding:10px 15px; 
+    border-radius:5px; 
+    cursor:pointer; 
+    font-weight: bold;
+}
+header button:hover { 
+    background:#e6e6e6; 
+}
+main { 
+    padding:20px; 
+}
+
+/* Daftar alat berat */
+.equipment-list { 
+    display:flex; 
+    flex-wrap:wrap; 
+    gap:20px; 
+}
+.equipment-card { 
+    background-color: #1c1c1c;
+    border: 1px solid #d4af37;
+    border-radius:15px; 
+    padding:8px; 
+    width:250px; 
+    box-shadow:0 2px 5px rgba(0,0,0,0.1); 
+    text-align:center; 
+    position: relative; 
+}
+.equipment-card img { 
+    width:100%; 
+    height:250px; 
+    object-fit:cover; 
+    border-radius:5px; 
+}
+.equipment-card h3 { 
+    margin:10px 0 5px; 
+}
+.equipment-card p { 
+    margin:5px 0; 
+}
+.equipment-card button { 
+    margin-top:10px; 
+    padding:10px 20px; 
+    background:#d4af37; 
+    color:#1c1c1c; 
+    font-size: medium;
+    border:none; 
+    border-radius:5px; 
+    cursor:pointer; 
+}
+.equipment-card button:hover { 
+    background:#e6e6e6; 
+}
+.equipment-card .sold { 
+    background:#28a745 !important; 
+    cursor: default; 
+}
+.equipment-card .sold:hover { 
+    background:#28a745 !important; 
+}
+.equipment-card .delete { 
+    background:#dc3545; 
+}
+.equipment-card .delete:hover { 
+    background:#b02a37; 
+}
+
+/* Form tambah alat berat */
+.form-add { background:rgb(0, 0, 0); padding:20px; border-radius:10px; border: 1px solid #d4af37; max-width:650px; margin:20px auto; box-shadow:0 px 5px rgba(0,0,0,0.1); display:none; flex-direction:column; gap:10px; }
+.form-add input, .form-add textarea { padding:8px; border-radius:3px; border:1px solid #ccc; width:97%; }
+.form-add button { background:#d4af37; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; }
+.form-add button:hover { background:#0056b3; }
+
+
+/* Halaman detail alat berat */
+.product-detail { border-radius:10px; border: 1px solid #d4af37; background:rgb(68, 68, 68); padding:20px; border-radius:5px; max-width:600px; margin:20px auto; box-shadow:0 2px 5px rgba(0,0,0,0.1); display:none; flex-direction:column; gap:10px; }
+.product-detail img { width:100%; max-height:500px; object-fit:contain; border-radius:5px; }
+.product-detail p { margin:10px 0; }
+.product-detail .status { font-weight:bold; color:#28a745; }
+</style>
+</head>
+<body>
+
+<header>
+<h1>PT PRIME TECH - Alat Berat</h1>
+<button onclick="showAddForm()">Tambah Alat Berat</button>
+</header>
+
+<main>
+<div class="equipment-list" id="equipmentList"></div>
+
+<!-- Form Tambah Alat Berat -->
+<div class="form-add" id="addForm">
+<h2>Tambah Alat Berat</h2>
+<label>Nama Alat:</label>
+<input type="text" id="name" required>
+<label>Harga:</label>
+<input type="text" id="price" required>
+<label>Deskripsi:</label>
+<textarea id="description"></textarea>
+<label>Pilih Gambar:</label>
+<input type="file" id="imageFile" accept="image/*">
+<button onclick="addEquipment()">Tambah</button>
+<button onclick="hideAddForm()" style="background:#ccc;color:black;">Batal</button>
+</div>
+
+<!-- Detail Alat Berat -->
+<div class="product-detail" id="productDetail">
+<button onclick="hideDetail()" style="background:#d4af37;color:black;margin-bottom:10px;border-radius:8px;padding:10px;font-weight: bold;">Kembali</button>
+<h2 id="detailName"></h2>
+<img id="detailImage" src="" alt="">
+<p><strong>Harga:</strong> <span id="detailPrice"></span></p>
+<p><strong>Deskripsi:</strong><br><span id="detailDesc"></span></p>
+<p><strong>Status:</strong> <span class="status" id="detailStatus"></span></p>
+</div>
+
+<script>
+// Load data dari localStorage
+let equipments = JSON.parse(localStorage.getItem('equipments')) || [];
+
+// Render daftar alat berat
+function renderList() {
+    const list = document.getElementById('equipmentList');
+    list.innerHTML = '';
+    equipments.forEach((eq, index) => {
+        const card = document.createElement('div');
+        card.className = 'equipment-card';
+        const soldButton = eq.sold ? 
+            `<button class="sold">Sold</button>` : 
+            `<button onclick="markSold(${index})">Sold</button>`;
+        card.innerHTML = `
+        <img src="${eq.image || 'https://via.placeholder.com/250x250?text=No+Image'}" alt="${eq.name}">
+        <h3>${eq.name}</h3>
+        <p>Harga: ${eq.price}</p>
+        <button onclick="showDetail(${index})">Detail</button>
+        ${soldButton}
+        <button class="delete" onclick="deleteEquipment(${index})">Hapus</button>
+        `;
+        list.appendChild(card);
+    });
+}
+
+// Tandai alat berat sebagai Sold
+function markSold(index){
+    equipments[index].sold = true;
+    localStorage.setItem('equipments', JSON.stringify(equipments));
+    renderList();
+}
+
+// Hapus alat berat
+function deleteEquipment(index){
+    if(confirm(`Apakah Anda yakin ingin menghapus "${equipments[index].name}"?`)){
+        equipments.splice(index, 1);
+        localStorage.setItem('equipments', JSON.stringify(equipments));
+        renderList();
+    }
+}
+
+// Tambah alat berat dengan upload gambar
+function addEquipment() {
+    const name = document.getElementById('name').value;
+    const price = document.getElementById('price').value;
+    const description = document.getElementById('description').value;
+    const fileInput = document.getElementById('imageFile');
+    
+    if(!name || !price){ alert('Nama dan Harga wajib diisi!'); return; }
+
+    if(fileInput.files && fileInput.files[0]){
+        const reader = new FileReader();
+        reader.onload = function(e){
+            const imageData = e.target.result; // Base64 image
+            equipments.push({name, price, description, image:imageData, sold:false});
+            localStorage.setItem('equipments', JSON.stringify(equipments));
+            renderList();
+            hideAddForm();
+            // Reset form
+            document.getElementById('name').value='';
+            document.getElementById('price').value='';
+            document.getElementById('description').value='';
+            fileInput.value='';
+        };
+        reader.readAsDataURL(fileInput.files[0]);
+    } else {
+        equipments.push({name, price, description, image:'', sold:false});
+        localStorage.setItem('equipments', JSON.stringify(equipments));
+        renderList();
+        hideAddForm();
+    }
+}
+
+// Tampilkan form tambah
+function showAddForm(){
+    document.getElementById('addForm').style.display='flex';
+    document.getElementById('equipmentList').style.display='none';
+    document.getElementById('productDetail').style.display='none';
+}
+
+// Sembunyikan form tambah
+function hideAddForm(){
+    document.getElementById('addForm').style.display='none';
+    document.getElementById('equipmentList').style.display='flex';
+}
+
+// Tampilkan detail alat berat
+function showDetail(index){
+    const eq = equipments[index];
+    document.getElementById('detailName').innerText = eq.name;
+    document.getElementById('detailPrice').innerText = eq.price;
+    document.getElementById('detailDesc').innerText = eq.description;
+    document.getElementById('detailImage').src = eq.image || 'https://via.placeholder.com/500x500?text=No+Image';
+    document.getElementById('detailStatus').innerText = eq.sold ? 'Sold' : 'Available';
+    document.getElementById('productDetail').style.display='flex';
+    document.getElementById('equipmentList').style.display='none';
+    document.getElementById('addForm').style.display='none';
+}
+
+// Sembunyikan detail
+function hideDetail(){
+    document.getElementById('productDetail').style.display='none';
+    document.getElementById('equipmentList').style.display='flex';
+}
+
+// Initial render
+renderList();
+</script>
+
+</body>
+</html>
